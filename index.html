@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FormFlow — Smart Forms Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c26;
+    --surface3: #242432;
+    --accent: #6c63ff;
+    --accent2: #a78bfa;
+    --accent3: #38bdf8;
+    --text: #f0f0ff;
+    --text2: #9191b0;
+    --text3: #5a5a7a;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(108,99,255,0.3);
+    --danger: #f87171;
+    --success: #34d399;
+    --warning: #fbbf24;
+    --radius: 12px;
+    --radius-lg: 18px;
+    --font: 'Sora', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+
+  /* ── Nav ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem; height: 60px;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 1.1rem; font-weight: 700; letter-spacing: -0.5px;
+    cursor: pointer;
+  }
+  .nav-logo span { color: var(--accent2); }
+  .nav-logo .dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+  .nav-actions { display: flex; gap: 10px; align-items: center; }
+
+  /* ── Buttons ── */
+  .btn {
+    font-family: var(--font);
+    font-size: 0.875rem; font-weight: 500;
+    padding: 8px 18px; border-radius: 8px;
+    border: 1px solid var(--border2);
+    background: transparent; color: var(--text);
+    cursor: pointer; transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: rgba(108,99,255,0.15); border-color: var(--accent); }
+  .btn-primary {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+  .btn-primary:hover { background: #7c74ff; border-color: #7c74ff; }
+  .btn-danger { border-color: rgba(248,113,113,0.4); color: var(--danger); }
+  .btn-danger:hover { background: rgba(248,113,113,0.1); border-color: var(--danger); }
+  .btn-sm { padding: 5px 12px; font-size: 0.8rem; }
+  .btn-icon {
+    width: 34px; height: 34px; padding: 0; display: flex; align-items: center;
+    justify-content: center; font-size: 1rem; border-radius: 8px;
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text2);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-icon:hover { color: var(--text); border-color: var(--border2); }
+
+  /* ── Pages ── */
+  .page { display: none; padding-top: 60px; min-height: 100vh; }
+  .page.active { display: block; }
+
+  /* ── Hero / Dashboard ── */
+  #page-home {
+    background: radial-gradient(ellipse at 20% 20%, rgba(108,99,255,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 80%, rgba(56,189,248,0.08) 0%, transparent 60%);
+  }
+  .hero {
+    max-width: 900px; margin: 0 auto; padding: 5rem 2rem 2rem;
+    text-align: center;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 700; letter-spacing: -1.5px;
+    background: linear-gradient(135deg, #fff 30%, var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 1rem;
+  }
+  .hero p { color: var(--text2); font-size: 1.1rem; margin-bottom: 2.5rem; line-height: 1.7; }
+  .hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    max-width: 900px; margin: 2rem auto;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    background: var(--border); border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .stat-item {
+    background: var(--surface); padding: 1.5rem;
+    text-align: center;
+  }
+  .stat-item .num { font-size: 2rem; font-weight: 700; color: var(--accent2); font-family: var(--mono); }
+  .stat-item .lbl { font-size: 0.8rem; color: var(--text3); margin-top: 4px; }
+
+  /* ── Forms list ── */
+  .forms-section {
+    max-width: 900px; margin: 0 auto; padding: 2rem;
+  }
+  .section-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .section-header h2 { font-size: 1.1rem; font-weight: 600; }
+  .forms-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px;
+  }
+  .form-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.25rem;
+    transition: all 0.2s; cursor: pointer; position: relative;
+  }
+  .form-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .form-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .form-card-title { font-weight: 600; font-size: 0.95rem; }
+  .form-card-badge {
+    font-size: 0.7rem; font-family: var(--mono);
+    background: rgba(108,99,255,0.15); color: var(--accent2);
+    padding: 3px 8px; border-radius: 20px; border: 1px solid rgba(108,99,255,0.2);
+  }
+  .form-card-meta { font-size: 0.78rem; color: var(--text3); margin-bottom: 14px; line-height: 1.6; }
+  .form-card-actions { display: flex; gap: 8px; }
+  .empty-state {
+    text-align: center; padding: 4rem 2rem;
+    color: var(--text3);
+  }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+  .empty-state p { margin-bottom: 1.5rem; }
+
+  /* ── Form Builder ── */
+  #page-builder { background: var(--bg); }
+  .builder-layout {
+    display: grid; grid-template-columns: 280px 1fr;
+    height: calc(100vh - 60px);
+  }
+  .builder-sidebar {
+    background: var(--surface); border-right: 1px solid var(--border);
+    overflow-y: auto; padding: 1.5rem;
+  }
+  .builder-sidebar h3 { font-size: 0.75rem; font-weight: 600; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
+  .question-type-btn {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 10px 12px; margin-bottom: 6px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text2); cursor: pointer;
+    font-family: var(--font); font-size: 0.85rem; font-weight: 500;
+    transition: all 0.15s;
+  }
+  .question-type-btn:hover { border-color: var(--border2); color: var(--text); background: rgba(108,99,255,0.08); }
+  .question-type-btn .qt-icon { width: 28px; height: 28px; border-radius: 6px;
+    background: rgba(108,99,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+  
+  .builder-main { overflow-y: auto; padding: 2rem; display: flex; flex-direction: column; gap: 1rem; }
+  .builder-top {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 1.5rem;
+  }
+  .form-title-input {
+    width: 100%; background: transparent; border: none; outline: none;
+    font-family: var(--font); font-size: 1.4rem; font-weight: 700;
+    color: var(--text); margin-bottom: 8px;
+  }
+  .form-desc-input {
+    width: 100%; background: transparent; border: none; outline: none;
+    font-family: var(--font); font-size: 0.9rem; color: var(--text2); resize: none;
+    line-height: 1.6;
+  }
+  .form-title-input::placeholder, .form-desc-input::placeholder { color: var(--text3); }
+  
+  /* Question card */
+  .question-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.25rem;
+    transition: border-color 0.2s;
+  }
+  .question-card.focused { border-color: var(--border2); }
+  .question-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .question-type-tag {
+    font-size: 0.7rem; font-family: var(--mono); color: var(--accent2);
+    background: rgba(108,99,255,0.1); padding: 3px 8px; border-radius: 20px;
+    border: 1px solid rgba(108,99,255,0.2);
+  }
+  .q-input {
+    width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--border);
+    outline: none; font-family: var(--font); font-size: 0.95rem; font-weight: 500;
+    color: var(--text); padding: 6px 0; margin-bottom: 12px; transition: border-color 0.2s;
+  }
+  .q-input:focus { border-color: var(--accent); }
+  .q-input::placeholder { color: var(--text3); }
+  .options-list { display: flex; flex-direction: column; gap: 8px; }
+  .option-row { display: flex; align-items: center; gap: 8px; }
+  .option-row input[type="text"] {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 12px;
+    font-family: var(--font); font-size: 0.85rem; color: var(--text); outline: none;
+    transition: border-color 0.2s;
+  }
+  .option-row input[type="text"]:focus { border-color: var(--accent); }
+  .option-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--text3); flex-shrink: 0; }
+  .option-check { width: 14px; height: 14px; border-radius: 3px; border: 2px solid var(--text3); flex-shrink: 0; }
+  .add-option-btn {
+    font-family: var(--font); font-size: 0.8rem; color: var(--accent2);
+    background: none; border: none; cursor: pointer; padding: 6px 0;
+    text-align: left; transition: color 0.2s;
+  }
+  .add-option-btn:hover { color: var(--accent); }
+  .q-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border);
+  }
+  .required-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text3); }
+  .toggle {
+    position: relative; width: 32px; height: 18px; cursor: pointer;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .toggle-track {
+    position: absolute; inset: 0; background: var(--surface3);
+    border-radius: 9px; transition: background 0.2s;
+  }
+  .toggle input:checked + .toggle-track { background: var(--accent); }
+  .toggle-thumb {
+    position: absolute; top: 2px; left: 2px;
+    width: 14px; height: 14px; background: #fff; border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle input:checked ~ .toggle-thumb { transform: translateX(14px); }
+  
+  /* Builder top bar */
+  .builder-topbar {
+    position: fixed; top: 60px; left: 280px; right: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.75rem 2rem;
+    background: rgba(10,10,15,0.9); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border); z-index: 50;
+  }
+  .builder-topbar-left { display: flex; gap: 8px; }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px); z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--radius-lg); padding: 2rem; width: min(520px, 90vw);
+    max-height: 85vh; overflow-y: auto;
+    transform: scale(0.96); transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: scale(1); }
+  .modal h2 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+  .modal p { font-size: 0.85rem; color: var(--text2); margin-bottom: 1.5rem; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.5rem; }
+  
+  .share-link-box {
+    display: flex; gap: 8px; align-items: center;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 14px;
+    margin-bottom: 1rem;
+  }
+  .share-link-box input {
+    flex: 1; background: none; border: none; outline: none;
+    font-family: var(--mono); font-size: 0.82rem; color: var(--accent2);
+  }
+
+  /* ── Form Responder ── */
+  #page-respond { background: var(--bg); }
+  .respond-wrap {
+    max-width: 680px; margin: 0 auto; padding: 3rem 2rem;
+  }
+  .respond-header {
+    background: linear-gradient(135deg, var(--surface) 0%, rgba(108,99,255,0.1) 100%);
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 2rem; margin-bottom: 1.5rem;
+    border-top: 4px solid var(--accent);
+  }
+  .respond-header h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .respond-header p { font-size: 0.9rem; color: var(--text2); }
+  .respond-question {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1rem;
+  }
+  .respond-question .q-label {
+    font-weight: 600; font-size: 0.95rem; margin-bottom: 1rem; line-height: 1.5;
+  }
+  .respond-question .required-star { color: var(--danger); margin-left: 4px; }
+  .respond-input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 14px;
+    font-family: var(--font); font-size: 0.9rem; color: var(--text);
+    outline: none; transition: border-color 0.2s;
+  }
+  .respond-input:focus { border-color: var(--accent); }
+  .respond-textarea { min-height: 100px; resize: vertical; }
+  .respond-options { display: flex; flex-direction: column; gap: 10px; }
+  .respond-option {
+    display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); cursor: pointer; transition: all 0.15s;
+    font-size: 0.9rem;
+  }
+  .respond-option:hover { border-color: var(--border2); }
+  .respond-option.selected { border-color: var(--accent); background: rgba(108,99,255,0.1); }
+  .respond-option input { display: none; }
+  .option-indicator {
+    width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--text3);
+    flex-shrink: 0; transition: all 0.15s; display: flex; align-items: center; justify-content: center;
+  }
+  .option-indicator.check { border-radius: 4px; }
+  .respond-option.selected .option-indicator { border-color: var(--accent); background: var(--accent); }
+  .respond-option.selected .option-indicator::after { content: ''; width: 6px; height: 6px; background: #fff; border-radius: 50%; }
+  .respond-option.selected .option-indicator.check::after { border-radius: 2px; }
+  
+  .scale-options { display: flex; gap: 8px; flex-wrap: wrap; }
+  .scale-btn {
+    width: 42px; height: 42px; border-radius: 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text2); cursor: pointer; font-family: var(--font);
+    font-size: 0.9rem; font-weight: 500; transition: all 0.15s;
+  }
+  .scale-btn:hover { border-color: var(--border2); }
+  .scale-btn.selected { background: var(--accent); border-color: var(--accent); color: #fff; }
+  
+  .submit-section { margin-top: 2rem; text-align: center; }
+  .submit-section .btn-primary { padding: 12px 40px; font-size: 1rem; border-radius: 10px; }
+  .thanks-screen { text-align: center; padding: 4rem 2rem; }
+  .thanks-screen .icon { font-size: 4rem; margin-bottom: 1rem; }
+  .thanks-screen h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+  .thanks-screen p { color: var(--text2); }
+
+  /* ── Results ── */
+  #page-results { background: var(--bg); }
+  .results-wrap { max-width: 900px; margin: 0 auto; padding: 2rem; }
+  .results-header {
+    margin-bottom: 2rem;
+    display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;
+  }
+  .results-header h1 { font-size: 1.4rem; font-weight: 700; }
+  .results-header p { font-size: 0.85rem; color: var(--text2); margin-top: 4px; }
+  .results-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 2rem;
+  }
+  .result-stat {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem; text-align: center;
+  }
+  .result-stat .n { font-size: 1.8rem; font-weight: 700; color: var(--accent2); font-family: var(--mono); }
+  .result-stat .l { font-size: 0.75rem; color: var(--text3); margin-top: 4px; }
+  
+  .result-question {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem;
+  }
+  .result-q-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem; }
+  .result-q-type { font-size: 0.75rem; color: var(--text3); margin-bottom: 1.25rem; }
+  .chart-wrap { position: relative; max-height: 280px; }
+  
+  .text-responses { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .text-response-item {
+    background: var(--surface2); border-radius: 8px; padding: 10px 14px;
+    font-size: 0.85rem; color: var(--text2); border-left: 2px solid var(--border2);
+  }
+  
+  /* AI Summary */
+  .ai-summary {
+    background: linear-gradient(135deg, rgba(108,99,255,0.08), rgba(56,189,248,0.06));
+    border: 1px solid rgba(108,99,255,0.3);
+    border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 2rem;
+  }
+  .ai-summary-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;
+  }
+  .ai-badge {
+    display: flex; align-items: center; gap: 6px; font-size: 0.75rem;
+    font-family: var(--mono); color: var(--accent2);
+    background: rgba(108,99,255,0.15); border: 1px solid rgba(108,99,255,0.3);
+    padding: 4px 10px; border-radius: 20px;
+  }
+  .ai-badge::before { content: '✦'; font-size: 0.7rem; }
+  .ai-summary-text { font-size: 0.9rem; line-height: 1.75; color: var(--text2); }
+  .ai-loading {
+    display: flex; align-items: center; gap: 10px; color: var(--text3); font-size: 0.85rem;
+  }
+  .ai-dots span {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent2); margin: 0 2px;
+    animation: aiDot 1.2s ease-in-out infinite;
+  }
+  .ai-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .ai-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes aiDot { 0%,80%,100% { opacity: 0.2; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
+
+  /* ── Inputs / Labels ── */
+  .field { margin-bottom: 1rem; }
+  .field label { display: block; font-size: 0.8rem; color: var(--text2); margin-bottom: 6px; }
+  .field input, .field textarea, .field select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 12px;
+    font-family: var(--font); font-size: 0.9rem; color: var(--text); outline: none;
+    transition: border-color 0.2s;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--accent); }
+  .field select option { background: var(--surface2); }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem; z-index: 1000;
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--radius); padding: 12px 20px;
+    font-size: 0.85rem; color: var(--text);
+    transform: translateY(100px); opacity: 0; transition: all 0.3s;
+    max-width: 300px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: rgba(52,211,153,0.4); }
+  .toast.error { border-color: rgba(248,113,113,0.4); color: var(--danger); }
+
+  /* ── Progress bar for respond ── */
+  .respond-progress {
+    height: 3px; background: var(--surface2); border-radius: 2px; margin-bottom: 2rem;
+  }
+  .respond-progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px; transition: width 0.4s ease;
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animated { animation: fadeInUp 0.35s ease forwards; }
+  
+  /* ── Responsive ── */
+  @media (max-width: 700px) {
+    .builder-layout { grid-template-columns: 1fr; }
+    .builder-sidebar { display: none; }
+    .builder-topbar { left: 0; }
+    .results-stats { grid-template-columns: 1fr 1fr; }
+    .stats-bar { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo" onclick="showPage('home')">
+    <div class="dot"></div>
+    Form<span>Flow</span>
+  </div>
+  <div class="nav-actions" id="nav-actions">
+    <button class="btn btn-primary" onclick="showPage('builder'); newForm()">+ New Form</button>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════ HOME ══════════════════════════════ -->
+<div id="page-home" class="page active">
+  <div class="hero animated">
+    <h1>Forms that think<br>with you</h1>
+    <p>Create beautiful forms, share them with anyone,<br>and let AI summarize what people are saying.</p>
+    <div class="hero-cta">
+      <button class="btn btn-primary" onclick="showPage('builder'); newForm()">Create your first form</button>
+      <button class="btn" onclick="scrollToForms()">View my forms ↓</button>
+    </div>
+  </div>
+
+  <div class="stats-bar" id="global-stats">
+    <div class="stat-item"><div class="num" id="stat-forms">0</div><div class="lbl">Forms created</div></div>
+    <div class="stat-item"><div class="num" id="stat-responses">0</div><div class="lbl">Total responses</div></div>
+    <div class="stat-item"><div class="num" id="stat-questions">0</div><div class="lbl">Questions asked</div></div>
+  </div>
+
+  <div class="forms-section" id="forms-section">
+    <div class="section-header">
+      <h2>My Forms</h2>
+      <button class="btn btn-sm" onclick="showPage('builder'); newForm()">+ New</button>
+    </div>
+    <div class="forms-grid" id="forms-grid">
+      <div class="empty-state">
+        <div class="icon">◻</div>
+        <p>No forms yet. Create one to get started.</p>
+        <button class="btn btn-primary" onclick="showPage('builder'); newForm()">Create Form</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ BUILDER ══════════════════════════════ -->
+<div id="page-builder" class="page">
+  <div class="builder-topbar">
+    <div class="builder-topbar-left">
+      <button class="btn btn-sm" onclick="showPage('home')">← Back</button>
+      <span style="font-size:0.8rem;color:var(--text3);line-height:34px" id="save-indicator">Unsaved</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-sm" onclick="previewForm()">Preview</button>
+      <button class="btn btn-sm" onclick="openShareModal()">Share</button>
+      <button class="btn btn-primary btn-sm" onclick="saveForm()">Save Form</button>
+    </div>
+  </div>
+
+  <div class="builder-layout">
+    <!-- Sidebar: question types -->
+    <div class="builder-sidebar">
+      <h3>Add Question</h3>
+      <button class="question-type-btn" onclick="addQuestion('short')"><div class="qt-icon">T</div>Short text</button>
+      <button class="question-type-btn" onclick="addQuestion('long')"><div class="qt-icon">≡</div>Long text</button>
+      <button class="question-type-btn" onclick="addQuestion('radio')"><div class="qt-icon">◉</div>Multiple choice</button>
+      <button class="question-type-btn" onclick="addQuestion('checkbox')"><div class="qt-icon">☑</div>Checkboxes</button>
+      <button class="question-type-btn" onclick="addQuestion('dropdown')"><div class="qt-icon">▾</div>Dropdown</button>
+      <button class="question-type-btn" onclick="addQuestion('scale')"><div class="qt-icon">★</div>Rating scale</button>
+      <button class="question-type-btn" onclick="addQuestion('date')"><div class="qt-icon">📅</div>Date</button>
+      <button class="question-type-btn" onclick="addQuestion('number')"><div class="qt-icon">#</div>Number</button>
+    </div>
+
+    <!-- Main build area -->
+    <div class="builder-main" id="builder-main">
+      <div class="builder-top">
+        <input class="form-title-input" id="form-title" placeholder="Untitled Form" />
+        <textarea class="form-desc-input" id="form-desc" placeholder="Form description (optional)" rows="2"></textarea>
+      </div>
+      <div id="questions-container"></div>
+      <div style="text-align:center;padding:1rem 0;color:var(--text3);font-size:0.85rem">
+        ← Pick a question type from the sidebar to add it
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ RESPOND ══════════════════════════════ -->
+<div id="page-respond" class="page">
+  <div class="respond-wrap" id="respond-wrap">
+    <div class="respond-progress"><div class="respond-progress-fill" id="respond-progress" style="width:0%"></div></div>
+    <div id="respond-content"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ RESULTS ══════════════════════════════ -->
+<div id="page-results" class="page">
+  <div class="results-wrap">
+    <div class="results-header">
+      <div>
+        <h1 id="results-title">Form Results</h1>
+        <p id="results-subtitle">0 responses</p>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="openShareModal()">Share Link</button>
+        <button class="btn btn-sm" onclick="showPage('home')">← Back</button>
+      </div>
+    </div>
+
+    <div class="ai-summary" id="ai-summary-box">
+      <div class="ai-summary-header">
+        <div class="ai-badge">Gemini AI Summary</div>
+        <button class="btn btn-sm" onclick="generateAISummary()" id="ai-regenerate-btn">Regenerate</button>
+      </div>
+      <div id="ai-summary-content">
+        <div class="ai-loading">
+          <div class="ai-dots"><span></span><span></span><span></span></div>
+          <span>Generating insights…</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-stats">
+      <div class="result-stat"><div class="n" id="res-count">0</div><div class="l">Total responses</div></div>
+      <div class="result-stat"><div class="n" id="res-questions">0</div><div class="l">Questions</div></div>
+      <div class="result-stat"><div class="n" id="res-completion">0%</div><div class="l">Avg completion</div></div>
+    </div>
+
+    <div id="results-charts"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ SHARE MODAL ══════════════════════════════ -->
+<div class="modal-overlay" id="share-modal">
+  <div class="modal">
+    <h2>Share Form</h2>
+    <p>Anyone with this link can fill out your form.</p>
+    <div class="share-link-box">
+      <input type="text" id="share-url" readonly />
+      <button class="btn btn-sm" onclick="copyShareLink()">Copy</button>
+    </div>
+    <div style="font-size:0.8rem;color:var(--text3);margin-bottom:1.5rem">
+      The link encodes your form — no server needed. Recipients open it directly.
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('share-modal')">Close</button>
+      <button class="btn btn-primary" onclick="openFormPreview()">Open Preview ↗</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════════
+const GEMINI_KEY = 'AIzaSyDDwryP-PKfZzMweLxx8DLXcnDr4QzKDzA';
+let currentFormId = null;
+let chartInstances = {};
+
+function getForms() {
+  try { return JSON.parse(localStorage.getItem('formflow_forms') || '{}'); } catch { return {}; }
+}
+function saveForms(forms) {
+  localStorage.setItem('formflow_forms', JSON.stringify(forms));
+}
+function getResponses() {
+  try { return JSON.parse(localStorage.getItem('formflow_responses') || '{}'); } catch { return {}; }
+}
+function saveResponses(responses) {
+  localStorage.setItem('formflow_responses', JSON.stringify(responses));
+}
+
+// ══════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (name === 'home') { renderHome(); }
+}
+
+function scrollToForms() {
+  document.getElementById('forms-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  HOME
+// ══════════════════════════════════════════════════════════════
+function renderHome() {
+  const forms = getForms();
+  const responses = getResponses();
+  const formList = Object.values(forms);
+  const totalResponses = Object.values(responses).reduce((a, arr) => a + arr.length, 0);
+  const totalQuestions = formList.reduce((a, f) => a + (f.questions || []).length, 0);
+
+  document.getElementById('stat-forms').textContent = formList.length;
+  document.getElementById('stat-responses').textContent = totalResponses;
+  document.getElementById('stat-questions').textContent = totalQuestions;
+
+  const grid = document.getElementById('forms-grid');
+  if (formList.length === 0) {
+    grid.innerHTML = `<div class="empty-state">
+      <div class="icon">◻</div>
+      <p>No forms yet. Create one to get started.</p>
+      <button class="btn btn-primary" onclick="showPage('builder'); newForm()">Create Form</button>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = formList.map(form => {
+    const resCount = (responses[form.id] || []).length;
+    const qCount = (form.questions || []).length;
+    const date = new Date(form.updatedAt || form.createdAt).toLocaleDateString();
+    return `<div class="form-card" onclick="editForm('${form.id}')">
+      <div class="form-card-header">
+        <div class="form-card-title">${escapeHtml(form.title || 'Untitled Form')}</div>
+        <div class="form-card-badge">${resCount} resp.</div>
+      </div>
+      <div class="form-card-meta">
+        ${qCount} question${qCount !== 1 ? 's' : ''} · Updated ${date}
+      </div>
+      <div class="form-card-actions" onclick="event.stopPropagation()">
+        <button class="btn btn-sm" onclick="editForm('${form.id}')">Edit</button>
+        <button class="btn btn-sm" onclick="viewResults('${form.id}')">Results</button>
+        <button class="btn btn-sm" onclick="shareForm('${form.id}')">Share</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteForm('${form.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function deleteForm(id) {
+  if (!confirm('Delete this form and all its responses?')) return;
+  const forms = getForms();
+  delete forms[id];
+  saveForms(forms);
+  const responses = getResponses();
+  delete responses[id];
+  saveResponses(responses);
+  renderHome();
+  toast('Form deleted');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  BUILDER
+// ══════════════════════════════════════════════════════════════
+function newForm() {
+  currentFormId = 'form_' + Date.now();
+  document.getElementById('form-title').value = '';
+  document.getElementById('form-desc').value = '';
+  document.getElementById('questions-container').innerHTML = '';
+  document.getElementById('save-indicator').textContent = 'Unsaved';
+}
+
+function editForm(id) {
+  const forms = getForms();
+  const form = forms[id];
+  if (!form) return;
+  currentFormId = id;
+  document.getElementById('form-title').value = form.title || '';
+  document.getElementById('form-desc').value = form.description || '';
+  renderQuestions(form.questions || []);
+  document.getElementById('save-indicator').textContent = 'Saved';
+  showPage('builder');
+}
+
+function renderQuestions(questions) {
+  const container = document.getElementById('questions-container');
+  container.innerHTML = '';
+  questions.forEach((q, i) => {
+    container.appendChild(createQuestionCard(q, i));
+  });
+}
+
+function getCurrentQuestions() {
+  const cards = document.querySelectorAll('.question-card');
+  const questions = [];
+  cards.forEach(card => {
+    const id = card.dataset.qid;
+    const type = card.dataset.qtype;
+    const text = card.querySelector('.q-input').value;
+    const required = card.querySelector('.toggle input').checked;
+    const q = { id, type, text, required };
+    if (['radio', 'checkbox', 'dropdown'].includes(type)) {
+      q.options = Array.from(card.querySelectorAll('.option-text')).map(i => i.value).filter(v => v.trim());
+    }
+    questions.push(q);
+  });
+  return questions;
+}
+
+function saveForm() {
+  const title = document.getElementById('form-title').value || 'Untitled Form';
+  const description = document.getElementById('form-desc').value;
+  const questions = getCurrentQuestions();
+  const forms = getForms();
+  const existing = forms[currentFormId] || {};
+  forms[currentFormId] = {
+    ...existing,
+    id: currentFormId,
+    title, description, questions,
+    updatedAt: new Date().toISOString(),
+    createdAt: existing.createdAt || new Date().toISOString()
+  };
+  saveForms(forms);
+  document.getElementById('save-indicator').textContent = '✓ Saved';
+  toast('Form saved!', 'success');
+}
+
+const QTypeLabel = {
+  short: 'Short text', long: 'Long text', radio: 'Multiple choice',
+  checkbox: 'Checkboxes', dropdown: 'Dropdown', scale: 'Rating (1–10)',
+  date: 'Date', number: 'Number'
+};
+
+function createQuestionCard(q, idx) {
+  const div = document.createElement('div');
+  div.className = 'question-card animated';
+  div.dataset.qid = q.id;
+  div.dataset.qtype = q.type;
+  div.style.animationDelay = (idx * 0.05) + 's';
+
+  let extra = '';
+  if (['radio', 'checkbox', 'dropdown'].includes(q.type)) {
+    const opts = (q.options || ['Option 1', 'Option 2']).map((o, i) => optionRow(o, q.type, i)).join('');
+    extra = `<div class="options-list" id="opts-${q.id}">${opts}</div>
+      <button class="add-option-btn" onclick="addOption('${q.id}','${q.type}')">+ Add option</button>`;
+  } else if (q.type === 'scale') {
+    extra = `<div style="font-size:0.8rem;color:var(--text3)">Respondents will pick 1–10</div>`;
+  } else if (q.type === 'date') {
+    extra = `<input type="date" class="respond-input" disabled style="max-width:200px">`;
+  } else if (q.type === 'number') {
+    extra = `<input type="number" class="respond-input" disabled placeholder="Numeric answer" style="max-width:180px">`;
+  } else {
+    extra = `<div style="background:var(--surface2);border-radius:8px;padding:8px 12px;font-size:0.8rem;color:var(--text3)">
+      ${q.type === 'long' ? 'Long text answer…' : 'Short text answer…'}
+    </div>`;
+  }
+
+  div.innerHTML = `<div class="question-card-header">
+      <div class="question-type-tag">${QTypeLabel[q.type]}</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn-icon" onclick="moveQuestion('${q.id}',-1)" title="Move up">↑</button>
+        <button class="btn-icon" onclick="moveQuestion('${q.id}',1)" title="Move down">↓</button>
+        <button class="btn-icon btn-danger" onclick="removeQuestion('${q.id}')" title="Delete">✕</button>
+      </div>
+    </div>
+    <input class="q-input" value="${escapeHtml(q.text || '')}" placeholder="Question text…">
+    ${extra}
+    <div class="q-footer">
+      <label class="required-toggle">
+        <label class="toggle">
+          <input type="checkbox" ${q.required ? 'checked' : ''}>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+        Required
+      </label>
+    </div>`;
+  return div;
+}
+
+function optionRow(val, type, idx) {
+  const shape = type === 'checkbox' ? 'option-check' : 'option-dot';
+  return `<div class="option-row">
+    <div class="${shape}"></div>
+    <input type="text" class="option-text" value="${escapeHtml(val)}" placeholder="Option ${idx + 1}">
+    <button class="btn-icon" onclick="this.closest('.option-row').remove()" style="width:24px;height:24px;font-size:0.75rem">✕</button>
+  </div>`;
+}
+
+function addOption(qid, type) {
+  const list = document.getElementById('opts-' + qid);
+  const idx = list.children.length;
+  list.insertAdjacentHTML('beforeend', optionRow('', type, idx));
+}
+
+function addQuestion(type) {
+  const q = { id: 'q_' + Date.now(), type, text: '', required: false, options: ['Option 1', 'Option 2'] };
+  const container = document.getElementById('questions-container');
+  const card = createQuestionCard(q, container.children.length);
+  container.appendChild(card);
+  card.querySelector('.q-input').focus();
+  document.getElementById('save-indicator').textContent = 'Unsaved';
+}
+
+function removeQuestion(qid) {
+  document.querySelector(`[data-qid="${qid}"]`)?.remove();
+}
+
+function moveQuestion(qid, dir) {
+  const container = document.getElementById('questions-container');
+  const card = container.querySelector(`[data-qid="${qid}"]`);
+  if (!card) return;
+  const cards = [...container.children];
+  const idx = cards.indexOf(card);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= cards.length) return;
+  if (dir < 0) container.insertBefore(card, cards[newIdx]);
+  else container.insertBefore(cards[newIdx], card);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SHARE
+// ══════════════════════════════════════════════════════════════
+function getShareUrl(formId) {
+  const base = window.location.href.split('?')[0].split('#')[0];
+  return base + '?respond=' + formId;
+}
+
+function openShareModal() {
+  if (!currentFormId) { toast('Save the form first', 'error'); return; }
+  saveForm();
+  document.getElementById('share-url').value = getShareUrl(currentFormId);
+  document.getElementById('share-modal').classList.add('open');
+}
+
+function shareForm(id) {
+  currentFormId = id;
+  document.getElementById('share-url').value = getShareUrl(id);
+  document.getElementById('share-modal').classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function copyShareLink() {
+  const url = document.getElementById('share-url').value;
+  navigator.clipboard.writeText(url).then(() => toast('Link copied!', 'success'));
+}
+
+function openFormPreview() {
+  window.open(getShareUrl(currentFormId), '_blank');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RESPOND (fill out form)
+// ══════════════════════════════════════════════════════════════
+function loadRespondPage(formId) {
+  const forms = getForms();
+  const form = forms[formId];
+  if (!form) {
+    document.getElementById('respond-content').innerHTML = `
+      <div class="thanks-screen">
+        <div class="icon">⚠</div>
+        <h2>Form not found</h2>
+        <p>This form may have been deleted or the link is invalid.</p>
+      </div>`;
+    return;
+  }
+  currentFormId = formId;
+  const questions = form.questions || [];
+  let answers = {};
+
+  const content = document.getElementById('respond-content');
+  content.innerHTML = `
+    <div class="respond-header animated">
+      <h1>${escapeHtml(form.title || 'Untitled Form')}</h1>
+      ${form.description ? `<p>${escapeHtml(form.description)}</p>` : ''}
+    </div>
+    <div id="respond-questions"></div>
+    <div class="submit-section" id="respond-submit">
+      <button class="btn btn-primary" onclick="submitResponse()">Submit Response →</button>
+      <p style="font-size:0.75rem;color:var(--text3);margin-top:10px">Your response will be recorded anonymously.</p>
+    </div>`;
+
+  const qContainer = document.getElementById('respond-questions');
+  questions.forEach((q, i) => {
+    qContainer.appendChild(createRespondQuestion(q, i, questions.length));
+  });
+
+  // Progress on scroll / interaction
+  document.querySelectorAll('.respond-option, .scale-btn, .respond-input, .respond-textarea').forEach(el => {
+    el.addEventListener('change', updateProgress);
+    el.addEventListener('click', updateProgress);
+  });
+}
+
+function createRespondQuestion(q, idx, total) {
+  const div = document.createElement('div');
+  div.className = 'respond-question animated';
+  div.dataset.qid = q.id;
+  div.style.animationDelay = ((idx + 1) * 0.08) + 's';
+
+  const reqStar = q.required ? '<span class="required-star">*</span>' : '';
+  let inputHtml = '';
+
+  if (q.type === 'short') {
+    inputHtml = `<input type="text" class="respond-input" data-qid="${q.id}" placeholder="Your answer…">`;
+  } else if (q.type === 'long') {
+    inputHtml = `<textarea class="respond-input respond-textarea" data-qid="${q.id}" placeholder="Your answer…"></textarea>`;
+  } else if (q.type === 'number') {
+    inputHtml = `<input type="number" class="respond-input" data-qid="${q.id}" placeholder="Enter a number…" style="max-width:200px">`;
+  } else if (q.type === 'date') {
+    inputHtml = `<input type="date" class="respond-input" data-qid="${q.id}" style="max-width:220px">`;
+  } else if (q.type === 'radio') {
+    inputHtml = `<div class="respond-options" id="resp-opts-${q.id}">
+      ${(q.options || []).map(o => `
+        <div class="respond-option" onclick="selectOption(this,'${q.id}','radio')">
+          <div class="option-indicator"></div>
+          <span>${escapeHtml(o)}</span>
+          <input type="hidden" value="${escapeHtml(o)}" data-qid="${q.id}" data-opt="radio">
+        </div>`).join('')}
+    </div>`;
+  } else if (q.type === 'checkbox') {
+    inputHtml = `<div class="respond-options" id="resp-opts-${q.id}">
+      ${(q.options || []).map(o => `
+        <div class="respond-option" onclick="selectOption(this,'${q.id}','checkbox')">
+          <div class="option-indicator check"></div>
+          <span>${escapeHtml(o)}</span>
+          <input type="hidden" value="${escapeHtml(o)}" data-qid="${q.id}" data-opt="checkbox">
+        </div>`).join('')}
+    </div>`;
+  } else if (q.type === 'dropdown') {
+    inputHtml = `<select class="respond-input" data-qid="${q.id}" style="max-width:300px">
+      <option value="">Select an option…</option>
+      ${(q.options || []).map(o => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join('')}
+    </select>`;
+  } else if (q.type === 'scale') {
+    inputHtml = `<div class="scale-options">${Array.from({length:10},(_,i)=>`
+      <button class="scale-btn" onclick="selectScale(this,'${q.id}',${i+1})" data-qid="${q.id}" data-val="${i+1}">${i+1}</button>`).join('')}</div>
+      <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text3);margin-top:6px;max-width:470px">
+        <span>Not at all</span><span>Extremely</span>
+      </div>`;
+  }
+
+  div.innerHTML = `<div class="q-label">${idx + 1}. ${escapeHtml(q.text || 'Question')}${reqStar}</div>${inputHtml}`;
+  return div;
+}
+
+function selectOption(el, qid, type) {
+  const container = document.getElementById('resp-opts-' + qid);
+  if (type === 'radio') {
+    container.querySelectorAll('.respond-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+  } else {
+    el.classList.toggle('selected');
+  }
+  updateProgress();
+}
+
+function selectScale(btn, qid, val) {
+  document.querySelectorAll(`[data-qid="${qid}"].scale-btn`).forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  updateProgress();
+}
+
+function updateProgress() {
+  const questions = document.querySelectorAll('.respond-question');
+  let answered = 0;
+  questions.forEach(q => {
+    const qid = q.dataset.qid;
+    const textInput = q.querySelector(`input[data-qid], textarea[data-qid], select[data-qid]`);
+    const selectedOpt = q.querySelector('.respond-option.selected');
+    const selectedScale = q.querySelector('.scale-btn.selected');
+    if ((textInput && textInput.value.trim()) || selectedOpt || selectedScale) answered++;
+  });
+  const pct = questions.length ? Math.round((answered / questions.length) * 100) : 0;
+  document.getElementById('respond-progress').style.width = pct + '%';
+}
+
+function collectAnswers() {
+  const answers = {};
+  document.querySelectorAll('.respond-question').forEach(qDiv => {
+    const qid = qDiv.dataset.qid;
+    const textInput = qDiv.querySelector(`input[type="text"][data-qid], textarea[data-qid], input[type="number"][data-qid], input[type="date"][data-qid], select[data-qid]`);
+    if (textInput) { answers[qid] = textInput.value; return; }
+    const radioSel = qDiv.querySelector('.respond-option.selected input[data-opt="radio"]');
+    if (radioSel) { answers[qid] = radioSel.value; return; }
+    const checkSels = qDiv.querySelectorAll('.respond-option.selected input[data-opt="checkbox"]');
+    if (checkSels.length) { answers[qid] = Array.from(checkSels).map(i => i.value); return; }
+    const scaleSel = qDiv.querySelector('.scale-btn.selected');
+    if (scaleSel) { answers[qid] = parseInt(scaleSel.dataset.val); }
+  });
+  return answers;
+}
+
+function submitResponse() {
+  const forms = getForms();
+  const form = forms[currentFormId];
+  if (!form) return;
+
+  // Validate required
+  let missing = false;
+  (form.questions || []).forEach(q => {
+    if (!q.required) return;
+    const answers = collectAnswers();
+    const val = answers[q.id];
+    if (!val || (Array.isArray(val) && val.length === 0) || val === '') missing = true;
+  });
+  if (missing) { toast('Please answer all required questions', 'error'); return; }
+
+  const answers = collectAnswers();
+  const responses = getResponses();
+  if (!responses[currentFormId]) responses[currentFormId] = [];
+  responses[currentFormId].push({ answers, submittedAt: new Date().toISOString() });
+  saveResponses(responses);
+
+  document.getElementById('respond-content').innerHTML = `
+    <div class="thanks-screen animated">
+      <div class="icon">✓</div>
+      <h2>Response recorded!</h2>
+      <p>Thank you for filling out <strong>${escapeHtml(form.title || 'this form')}</strong>.<br>Your response has been saved.</p>
+    </div>`;
+  document.getElementById('respond-progress').style.width = '100%';
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RESULTS
+// ══════════════════════════════════════════════════════════════
+function viewResults(formId) {
+  currentFormId = formId;
+  const forms = getForms();
+  const form = forms[formId];
+  const responses = getResponses();
+  const resArr = responses[formId] || [];
+
+  document.getElementById('results-title').textContent = form?.title || 'Form Results';
+  document.getElementById('results-subtitle').textContent = `${resArr.length} response${resArr.length !== 1 ? 's' : ''} collected`;
+  document.getElementById('res-count').textContent = resArr.length;
+  document.getElementById('res-questions').textContent = (form?.questions || []).length;
+
+  // Completion estimate
+  const totalExpected = (form?.questions || []).length * resArr.length;
+  let totalAnswered = 0;
+  resArr.forEach(r => totalAnswered += Object.keys(r.answers || {}).length);
+  const pct = totalExpected > 0 ? Math.round((totalAnswered / totalExpected) * 100) : 0;
+  document.getElementById('res-completion').textContent = pct + '%';
+
+  // Destroy old charts
+  Object.values(chartInstances).forEach(c => c.destroy());
+  chartInstances = {};
+
+  // Render charts
+  const chartsDiv = document.getElementById('results-charts');
+  chartsDiv.innerHTML = '';
+  (form?.questions || []).forEach(q => {
+    const section = document.createElement('div');
+    section.className = 'result-question animated';
+    section.innerHTML = `<div class="result-q-title">${escapeHtml(q.text || 'Question')}</div>
+      <div class="result-q-type">${QTypeLabel[q.type]}</div>
+      <div id="chart-area-${q.id}"></div>`;
+    chartsDiv.appendChild(section);
+    renderQuestionChart(q, resArr, section.querySelector(`#chart-area-${q.id}`));
+  });
+
+  showPage('results');
+  generateAISummary();
+}
+
+function renderQuestionChart(q, resArr, container) {
+  const answers = resArr.map(r => r.answers?.[q.id]).filter(v => v !== undefined && v !== '');
+
+  if (answers.length === 0) {
+    container.innerHTML = `<div style="font-size:0.85rem;color:var(--text3);padding:8px 0">No answers yet</div>`;
+    return;
+  }
+
+  if (q.type === 'radio' || q.type === 'dropdown') {
+    const counts = {};
+    answers.forEach(a => { counts[a] = (counts[a] || 0) + 1; });
+    renderBarChart(container, Object.keys(counts), Object.values(counts), q.id);
+  } else if (q.type === 'checkbox') {
+    const counts = {};
+    answers.forEach(arr => {
+      (Array.isArray(arr) ? arr : [arr]).forEach(a => { counts[a] = (counts[a] || 0) + 1; });
+    });
+    renderBarChart(container, Object.keys(counts), Object.values(counts), q.id, 'horizontalBar');
+  } else if (q.type === 'scale') {
+    const counts = {};
+    for (let i = 1; i <= 10; i++) counts[i] = 0;
+    answers.forEach(a => { if (counts[a] !== undefined) counts[a]++; });
+    renderBarChart(container, Object.keys(counts), Object.values(counts), q.id, 'scale');
+  } else if (q.type === 'number') {
+    const nums = answers.map(Number).filter(n => !isNaN(n));
+    const avg = nums.length ? (nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1) : 'N/A';
+    const min = nums.length ? Math.min(...nums) : 'N/A';
+    const max = nums.length ? Math.max(...nums) : 'N/A';
+    container.innerHTML = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px">
+      <div class="result-stat"><div class="n">${avg}</div><div class="l">Average</div></div>
+      <div class="result-stat"><div class="n">${min}</div><div class="l">Min</div></div>
+      <div class="result-stat"><div class="n">${max}</div><div class="l">Max</div></div>
+    </div>`;
+  } else {
+    // Text answers
+    container.innerHTML = `<div class="text-responses">
+      ${answers.slice(0,20).map(a => `<div class="text-response-item">${escapeHtml(String(a))}</div>`).join('')}
+      ${answers.length > 20 ? `<div style="font-size:0.75rem;color:var(--text3)">…and ${answers.length - 20} more</div>` : ''}
+    </div>`;
+  }
+}
+
+function renderBarChart(container, labels, data, qid, variant) {
+  const wrap = document.createElement('div');
+  wrap.className = 'chart-wrap';
+  const canvas = document.createElement('canvas');
+  canvas.id = 'canvas-' + qid;
+  wrap.appendChild(canvas);
+  container.appendChild(wrap);
+
+  const isHorizontal = variant === 'horizontalBar';
+  const palette = ['#6c63ff','#a78bfa','#38bdf8','#34d399','#fbbf24','#f87171','#e879f9','#fb923c','#4ade80','#60a5fa'];
+
+  setTimeout(() => {
+    chartInstances[qid] = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: labels.map((_, i) => palette[i % palette.length] + 'cc'),
+          borderColor: labels.map((_, i) => palette[i % palette.length]),
+          borderWidth: 1,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        indexAxis: isHorizontal ? 'y' : 'x',
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#13131a',
+            borderColor: 'rgba(108,99,255,0.3)',
+            borderWidth: 1,
+            titleColor: '#f0f0ff',
+            bodyColor: '#9191b0'
+          }
+        },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9191b0', font: { family: 'Sora' } } },
+          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9191b0', font: { family: 'Sora' } } }
+        }
+      }
+    });
+  }, 100);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  AI SUMMARY (Gemini)
+// ══════════════════════════════════════════════════════════════
+async function generateAISummary() {
+  const summaryContent = document.getElementById('ai-summary-content');
+  summaryContent.innerHTML = `<div class="ai-loading">
+    <div class="ai-dots"><span></span><span></span><span></span></div>
+    <span>Analyzing responses with Gemini…</span>
+  </div>`;
+
+  const forms = getForms();
+  const form = forms[currentFormId];
+  const responses = getResponses();
+  const resArr = responses[currentFormId] || [];
+
+  if (!form || resArr.length === 0) {
+    summaryContent.innerHTML = `<div class="ai-summary-text" style="color:var(--text3)">No responses to analyze yet. Share the form link to start collecting responses.</div>`;
+    return;
+  }
+
+  // Build context for Gemini
+  let prompt = `You are analyzing survey results. Here is the form and its responses:\n\nForm: "${form.title}"\n`;
+  if (form.description) prompt += `Description: ${form.description}\n`;
+  prompt += `\nTotal responses: ${resArr.length}\n\n`;
+
+  (form.questions || []).forEach(q => {
+    prompt += `\nQuestion: "${q.text}" (${QTypeLabel[q.type]})\n`;
+    const answers = resArr.map(r => r.answers?.[q.id]).filter(v => v !== undefined && v !== '');
+    if (q.type === 'radio' || q.type === 'dropdown') {
+      const counts = {};
+      answers.forEach(a => { counts[a] = (counts[a] || 0) + 1; });
+      prompt += `Answers: ${JSON.stringify(counts)}\n`;
+    } else if (q.type === 'checkbox') {
+      const counts = {};
+      answers.forEach(arr => {
+        (Array.isArray(arr) ? arr : [arr]).forEach(a => { counts[a] = (counts[a] || 0) + 1; });
+      });
+      prompt += `Answers: ${JSON.stringify(counts)}\n`;
+    } else if (q.type === 'scale') {
+      const nums = answers.map(Number);
+      const avg = nums.length ? (nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1) : 0;
+      prompt += `Numeric scale answers (1-10). Average: ${avg}. Distribution: ${JSON.stringify(nums)}\n`;
+    } else {
+      prompt += `Text answers (sample): ${answers.slice(0,10).join(' | ')}\n`;
+    }
+  });
+
+  prompt += `\nPlease provide a concise, insightful 3-4 paragraph summary of what the respondents think, key trends, notable findings, and any recommendations. Use a natural, analytical tone. No bullet points—prose only. Speak as if presenting to the form creator.`;
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 600 }
+      })
+    });
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (!text) throw new Error('No content');
+    summaryContent.innerHTML = `<div class="ai-summary-text">${escapeHtml(text).replace(/\n\n/g,'</p><p style="margin-top:0.8rem">').replace(/\n/g,'<br>')}</div>`;
+  } catch (e) {
+    summaryContent.innerHTML = `<div class="ai-summary-text" style="color:var(--danger)">Could not generate summary. Check your Gemini API key or network connection.<br><small>${e.message}</small></div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  BUILDER PREVIEW
+// ══════════════════════════════════════════════════════════════
+function previewForm() {
+  saveForm();
+  loadRespondPage(currentFormId);
+  showPage('respond');
+  document.getElementById('nav-actions').innerHTML = `
+    <button class="btn btn-sm" onclick="showPage('builder')">← Back to Editor</button>
+    <button class="btn btn-primary btn-sm" onclick="viewResults('${currentFormId}')">View Results</button>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════════════════════════
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  setTimeout(() => el.className = 'toast', 2800);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════════════════════
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  INIT — check if respond link
+// ══════════════════════════════════════════════════════════════
+function init() {
+  const params = new URLSearchParams(window.location.search);
+  const respondId = params.get('respond');
+
+  if (respondId) {
+    // Shared form link mode
+    document.getElementById('nav-actions').innerHTML = `
+      <button class="btn btn-sm" onclick="window.location.href=window.location.pathname">← Back to FormFlow</button>`;
+    loadRespondPage(respondId);
+    showPage('respond');
+  } else {
+    renderHome();
+  }
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+
+init();
+</script>
+</body>
+</html>
