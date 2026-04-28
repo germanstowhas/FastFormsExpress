@@ -27,7 +27,39 @@
     --radius-lg: 18px;
     --font: 'Sora', sans-serif;
     --mono: 'DM Mono', monospace;
+    --nav-bg: rgba(10,10,15,0.85);
+    --shadow: none;
   }
+
+  body.light {
+    --bg: #f4f4f8;
+    --surface: #ffffff;
+    --surface2: #f0f0f6;
+    --surface3: #e4e4ee;
+    --accent: #5b52e8;
+    --accent2: #7c6ff7;
+    --accent3: #0ea5e9;
+    --text: #1a1a2e;
+    --text2: #4a4a6a;
+    --text3: #8888aa;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(91,82,232,0.25);
+    --danger: #dc2626;
+    --success: #059669;
+    --warning: #d97706;
+    --nav-bg: rgba(244,244,248,0.88);
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  /* Theme toggle button */
+  .theme-toggle {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text2); cursor: pointer; font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .theme-toggle:hover { border-color: var(--border2); color: var(--text); }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -49,7 +81,7 @@
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 2rem; height: 60px;
-    background: rgba(10,10,15,0.85);
+    background: var(--nav-bg);
     backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border);
   }
@@ -466,7 +498,21 @@
   }
   .animated { animation: fadeInUp 0.35s ease forwards; }
   
-  /* ── Responsive ── */
+  /* Light mode specific overrides */
+  body.light .form-card { box-shadow: var(--shadow); }
+  body.light .result-question { box-shadow: var(--shadow); }
+  body.light .respond-question { box-shadow: var(--shadow); }
+  body.light .builder-top { box-shadow: var(--shadow); }
+  body.light .question-card { box-shadow: var(--shadow); }
+  body.light .ai-summary { background: linear-gradient(135deg, rgba(91,82,232,0.06), rgba(14,165,233,0.04)); }
+  body.light #page-home { background: radial-gradient(ellipse at 20% 20%, rgba(91,82,232,0.08) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(14,165,233,0.06) 0%, transparent 60%); }
+  body.light .hero h1 { background: linear-gradient(135deg, #1a1a2e 30%, var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  body.light .builder-sidebar { background: var(--surface); }
+  body.light .builder-topbar { background: rgba(244,244,248,0.92); }
+  body.light .respond-header { background: linear-gradient(135deg, var(--surface) 0%, rgba(91,82,232,0.06) 100%); }
+  body.light .modal { background: var(--surface); }
+  body.light .stats-bar { background: var(--border); }
+  body.light .stat-item { background: var(--surface); }
   @media (max-width: 700px) {
     .builder-layout { grid-template-columns: 1fr; }
     .builder-sidebar { display: none; }
@@ -485,6 +531,7 @@
     Form<span>Flow</span>
   </div>
   <div class="nav-actions" id="nav-actions">
+    <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
     <button class="btn btn-primary" onclick="showPage('builder'); newForm()">+ New Form</button>
   </div>
 </nav>
@@ -1203,16 +1250,16 @@ function renderBarChart(container, labels, data, qid, variant) {
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#13131a',
-            borderColor: 'rgba(108,99,255,0.3)',
+            backgroundColor: document.body.classList.contains('light') ? '#ffffff' : '#13131a',
+            borderColor: document.body.classList.contains('light') ? 'rgba(91,82,232,0.2)' : 'rgba(108,99,255,0.3)',
             borderWidth: 1,
-            titleColor: '#f0f0ff',
-            bodyColor: '#9191b0'
+            titleColor: document.body.classList.contains('light') ? '#1a1a2e' : '#f0f0ff',
+            bodyColor: document.body.classList.contains('light') ? '#4a4a6a' : '#9191b0'
           }
         },
         scales: {
-          x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9191b0', font: { family: 'Sora' } } },
-          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9191b0', font: { family: 'Sora' } } }
+          x: { grid: { color: document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)' }, ticks: { color: document.body.classList.contains('light') ? '#4a4a6a' : '#9191b0', font: { family: 'Sora' } } },
+          y: { grid: { color: document.body.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)' }, ticks: { color: document.body.classList.contains('light') ? '#4a4a6a' : '#9191b0', font: { family: 'Sora' } } }
         }
       }
     });
@@ -1299,8 +1346,31 @@ function previewForm() {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  TOAST
+//  THEME TOGGLE
 // ══════════════════════════════════════════════════════════════
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  const btn = document.getElementById('theme-toggle-btn');
+  btn.textContent = isLight ? '🌙' : '☀️';
+  localStorage.setItem('formflow_theme', isLight ? 'light' : 'dark');
+  // Re-render charts with updated colors if on results page
+  if (document.getElementById('page-results').classList.contains('active') && currentFormId) {
+    setTimeout(() => viewResults(currentFormId), 50);
+  }
+}
+
+function loadTheme() {
+  const saved = localStorage.getItem('formflow_theme');
+  const btn = document.getElementById('theme-toggle-btn');
+  if (saved === 'light') {
+    document.body.classList.add('light');
+    btn.textContent = '🌙';
+  } else {
+    btn.textContent = '☀️';
+  }
+}
+
+
 function toast(msg, type = '') {
   const el = document.getElementById('toast');
   el.textContent = msg;
@@ -1319,6 +1389,7 @@ function escapeHtml(str) {
 //  INIT — check if respond link
 // ══════════════════════════════════════════════════════════════
 function init() {
+  loadTheme();
   const params = new URLSearchParams(window.location.search);
   const respondId = params.get('respond');
 
