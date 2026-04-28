@@ -1316,7 +1316,7 @@ async function generateAISummary() {
   prompt += `\nPlease provide a concise, insightful 3-4 paragraph summary of what the respondents think, key trends, notable findings, and any recommendations. Use a natural, analytical tone. No bullet points—prose only. Speak as if presenting to the form creator.`;
 
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1325,11 +1325,24 @@ async function generateAISummary() {
       })
     });
     const data = await res.json();
+
+    // Surface API-level errors clearly
+    if (!res.ok) {
+      const apiMsg = data?.error?.message || `HTTP ${res.status}`;
+      const apiStatus = data?.error?.status || '';
+      throw new Error(`Gemini API error: ${apiStatus} — ${apiMsg}`);
+    }
+
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    if (!text) throw new Error('No content');
+    if (!text) throw new Error('Gemini returned an empty response. The prompt may have been blocked or the quota exceeded.');
     summaryContent.innerHTML = `<div class="ai-summary-text">${escapeHtml(text).replace(/\n\n/g,'</p><p style="margin-top:0.8rem">').replace(/\n/g,'<br>')}</div>`;
   } catch (e) {
-    summaryContent.innerHTML = `<div class="ai-summary-text" style="color:var(--danger)">Could not generate summary. Check your Gemini API key or network connection.<br><small>${e.message}</small></div>`;
+    summaryContent.innerHTML = `<div class="ai-summary-text" style="color:var(--danger)">
+      <strong>Could not generate summary</strong><br><br>
+      <span style="font-family:var(--mono);font-size:0.8rem;opacity:0.85">${escapeHtml(e.message)}</span><br><br>
+      <span style="font-size:0.8rem;color:var(--text3)">Common causes: invalid API key, quota exceeded, or network issue. Check the browser console (F12) for more details.</span>
+    </div>`;
+    console.error('[FormFlow Gemini Error]', e);
   }
 }
 
